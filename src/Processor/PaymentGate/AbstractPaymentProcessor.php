@@ -14,6 +14,7 @@ use App\Config\PurchaseStatus;
 use App\Entity\Purchase;
 use App\Exception\ApiException;
 use App\Repository\PurchaseRepository;
+use App\Service\CommonService;
 use App\Service\Payment\PaymentProcessorInterface;
 
 class AbstractPaymentProcessor implements PaymentProcessorInterface
@@ -21,18 +22,16 @@ class AbstractPaymentProcessor implements PaymentProcessorInterface
     public string $name = '';
 
     public function __construct(
-        readonly private PurchaseRepository $purchaseRepository
+        readonly private PurchaseRepository $purchaseRepository,
+		readonly private CommonService $commonService
     ) {
     }
 
     public function process(Purchase $purchase): void
     {
         // Для теста различных статусов, мы берем рандомный статус, только для примера.
-        $statusInt = mt_rand(2, 5);
-        $status = PurchaseStatus::from($statusInt);
-
+        $status = $this->commonService->getRandomStatus();
         $error = PurchaseStatus::Error === $status;
-
         $purchase->setStatus($status);
 
         // Если у нас ошибка, то нам не нужно ставить PurchasedAt

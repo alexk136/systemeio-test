@@ -20,6 +20,7 @@ use App\Repository\PurchaseRepository;
 use App\Service\CommonService;
 use App\Service\Data\DataProcessorInterface;
 use App\Service\Payment\PaymentProcessorsBus;
+use App\Service\RepoService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -29,7 +30,8 @@ final readonly class PurchaseProcessor implements DataProcessorInterface
         private PaymentProcessorsBus $paymentProcessorsBus,
         private ValidatorInterface $validator,
         private PurchaseRepository $purchaseRepository,
-        private CommonService $commonService
+        private CommonService $commonService,
+		private RepoService $repoService
     ) {
     }
 
@@ -37,8 +39,8 @@ final readonly class PurchaseProcessor implements DataProcessorInterface
     {
         // Процессим покупку
         $dto = $this->getDtoFromRequest($request->request->all());
-        $product = $this->commonService->getProduct($dto->product);
-        $coupon = $this->commonService->getCoupon($dto->couponCode);
+        $product = $this->repoService->getProduct($dto->product);
+        $coupon = $this->repoService->getCoupon($dto->couponCode);
         $purchase = $this->createNewPurchase($dto, $product, $coupon);
         $this->purchaseRepository->save($purchase);
         $this->paymentProcessorsBus->handle($dto->paymentProcessor, $purchase);
@@ -46,7 +48,7 @@ final readonly class PurchaseProcessor implements DataProcessorInterface
 
     private function createNewPurchase(Dto $dto, Product $product, Coupon $coupon = null): Purchase
     {
-        $countryTax = $this->commonService->getCountryTax($dto->taxNumber);
+        $countryTax = $this->repoService->getCountryTax($dto->taxNumber);
         $price = $this->commonService->recalculateProductPriceByCoupon($product, $coupon);
         $tax = $this->commonService->getPriceTax($countryTax, $price);
 

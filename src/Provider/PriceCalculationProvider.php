@@ -14,6 +14,7 @@ use App\DTO\ProductPriceRecalculationData as Dto;
 use App\Exception\ApiException;
 use App\Service\CommonService;
 use App\Service\Data\DataProviderInterface;
+use App\Service\RepoService;
 use JetBrains\PhpStorm\ArrayShape;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -22,7 +23,8 @@ readonly class PriceCalculationProvider implements DataProviderInterface
 {
     public function __construct(
         private ValidatorInterface $validator,
-        private CommonService $commonService
+        private CommonService $commonService,
+		private RepoService $repoService
     ) {
     }
 
@@ -30,9 +32,9 @@ readonly class PriceCalculationProvider implements DataProviderInterface
     public function provide(Request $request): array
     {
         $dto = $this->getDtoFromRequest($request->request->all());
-        $product = $this->commonService->getProduct($dto->product);
-        $coupon = $this->commonService->getCoupon($dto->couponCode);
-        $countryTax = $this->commonService->getCountryTax($dto->taxNumber);
+        $product = $this->repoService->getProduct($dto->product);
+        $coupon = $this->repoService->getCoupon($dto->couponCode);
+        $countryTax = $this->repoService->getCountryTax($dto->taxNumber);
 
         $price = $this->commonService->recalculateProductPriceByCoupon($product, $coupon);
         $tax = $this->commonService->getPriceTax($countryTax, $price);
